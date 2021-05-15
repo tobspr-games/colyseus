@@ -1,6 +1,6 @@
 {
   "name": "@tobspr/colyseus",
-  "version": "0.15",
+  "version": "0.15.3",
   "description": "Multiplayer Framework for Node.js.",
   "main": "./lib/index.js",
   "module": "./esm/index.mjs",
