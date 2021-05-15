@@ -212,7 +212,7 @@ export function hasHandler(name: string) {
 /**
  * Create a room
  */
-export async function createRoom(roomName: string, clientOptions: ClientOptions): Promise<RoomListingData> {
+ export async function createRoom(roomName: string, clientOptions: ClientOptions, roomId?: string): Promise<RoomListingData> {
   const roomsSpawnedByProcessId = await presence.hgetall(getRoomCountKey());
 
   const processIdWithFewerRooms = (
@@ -225,7 +225,7 @@ export async function createRoom(roomName: string, clientOptions: ClientOptions)
 
   if (processIdWithFewerRooms === processId) {
     // create the room on this process!
-    return await handleCreateRoom(roomName, clientOptions);
+    return await handleCreateRoom(roomName, clientOptions, roomId);
 
   } else {
     // ask other process to create the room!
@@ -236,21 +236,21 @@ export async function createRoom(roomName: string, clientOptions: ClientOptions)
         presence,
         getProcessChannel(processIdWithFewerRooms),
         undefined,
-        [roomName, clientOptions],
+        [roomName, clientOptions, roomId],
         REMOTE_ROOM_SHORT_TIMEOUT,
       );
 
     } catch (e) {
       // if other process failed to respond, create the room on this process
       debugAndPrintError(e);
-      room = await handleCreateRoom(roomName, clientOptions);
+      room = await handleCreateRoom(roomName, clientOptions, roomId);
     }
 
     return room;
   }
 }
 
-async function handleCreateRoom(roomName: string, clientOptions: ClientOptions): Promise<RoomListingData> {
+async function handleCreateRoom(roomName: string, clientOptions: ClientOptions, roomId?: string): Promise<RoomListingData> {
   const registeredHandler = handlers[roomName];
 
   if (!registeredHandler) {
@@ -260,7 +260,7 @@ async function handleCreateRoom(roomName: string, clientOptions: ClientOptions):
   const room = new registeredHandler.klass();
 
   // set room public attributes
-  room.roomId = generateId();
+  room.roomId = roomId || generateId();
   room.roomName = roomName;
   room.presence = presence;
 
@@ -345,8 +345,8 @@ export function gracefullyShutdown(): Promise<any> {
 /**
  * Reserve a seat for a client in a room
  */
-export async function reserveSeatFor(room: RoomListingData, options: any) {
-  const sessionId: string = generateId();
+ export async function reserveSeatFor(room: RoomListingData, options: any, sessionId?: string) {
+  sessionId = sessionId || generateId();
 
   debugMatchMaking(
     'reserving seat. sessionId: \'%s\', roomId: \'%s\', processId: \'%s\'',

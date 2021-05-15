@@ -28,7 +28,7 @@ export class uWebSocketsTransport extends Transport {
 
     protected simulateLatencyMs: number;
 
-    constructor(options: ServerOptions & uWebSockets.AppOptions = {}) {
+    constructor(options: ServerOptions & uWebSockets.AppOptions & uWebSockets.WebSocketBehavior = {}) {
         super();
 
         this.app = uWebSockets.App({
@@ -45,10 +45,15 @@ export class uWebSocketsTransport extends Transport {
 
         this.app.ws('/*', {
             //
-            // disable idle timeout. 
+            // disable idle timeout.
             // use pingInterval/pingMaxRetries instead.
             //
-            idleTimeout: 0, 
+            idleTimeout: 0,
+
+            maxBackpressure: options.maxBackpressure || 1024 * 1024,
+            compression: options.compression || uWebSockets.DISABLED,
+            maxPayloadLength: options.maxPayloadLength || 1024 * 1024,
+
 
             upgrade: (res, req, context) => {
                 /* This immediately calls open handler, you must not use res after this call */
@@ -221,7 +226,7 @@ export class uWebSocketsTransport extends Transport {
             const matchedParams = url.match(allowedRoomNameChars);
             const matchmakeIndex = matchedParams.indexOf(matchmakeRoute);
 
-            // read json body 
+            // read json body
             this.readJson(res, async (clientOptions) => {
 
                 const method = matchedParams[matchmakeIndex + 1];
